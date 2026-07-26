@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "id": "nora",
+  "label": "Nora",
+  "version": "1.0.0",
+  "author": "hermes-desktop-avatar",
+  "license": "user-content",
+  "default_fps": 24,
+  "external_clip_roots": [],
+  "states": {
+    "idle": [
+      "nora_idle_a_sigh0.webp",
+      "nora_idle_a_sigh1.webp",
+      "nora_idle_a_sigh2.webp",
+      "nora_idle_a_sigh_3.webp"
+    ],
+    "talk": [
+      "nora_talking1.webp",
+      "nora_talking2.webp"
+    ],
+    "think": [
+      "nora_thinking1.webp",
+      "nora_thinking2.webp",
+      "nora_thinking3.webp"
+    ],
+    "dance": [
+      "nora_idle_a_sigh0.webp"
+    ],
+    "sleep": [
+      "nora_idle_a_sigh0.webp"
+    ]
+  },
+  "ambient": {
+    "pool": [
+      "nora_idle_a_sigh0.webp",
+      "nora_idle_a_sigh1.webp",
+      "nora_idle_a_sigh2.webp",
+      "nora_idle_a_sigh_3.webp",
+      "nora_idle_b_dancing_serious.webp",
+      "nora_idle_b_dancing_serious_2.webp",
+      "nora_idle_b_japanese_thank_you.webp",
+      "nora_idle_b_jumping.webp",
+      "nora_idle_b_turns_around.webp",
+      "nora_idle_c_dancing_sexy1.webp",
+      "nora_idle_c_impatient.webp"
+    ],
+    "rarity": {
+      "nora_idle_a_sigh0.webp": 1.0,
+      "nora_idle_a_sigh1.webp": 1.0,
+      "nora_idle_a_sigh2.webp": 1.0,
+      "nora_idle_a_sigh_3.webp": 1.0,
+      "nora_idle_b_dancing_serious.webp": 4.0,
+      "nora_idle_b_dancing_serious_2.webp": 4.0,
+      "nora_idle_b_japanese_thank_you.webp": 4.0,
+      "nora_idle_b_jumping.webp": 4.0,
+      "nora_idle_b_turns_around.webp": 4.0,
+      "nora_idle_c_dancing_sexy1.webp": 20.0,
+      "nora_idle_c_impatient.webp": 20.0
+    }
+  },
+  "fallbacks": {
+    "dance": "idle",
+    "sleep": "idle"
+  }
+}

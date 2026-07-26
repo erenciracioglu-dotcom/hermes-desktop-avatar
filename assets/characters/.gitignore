@@ -1,0 +1,4 @@
+# Portable packs are large (embedded WebP). Build with:
+#   python scripts/pack_character.py nora
+# Directory packs (*/character.json) stay in git.
+*.hchar

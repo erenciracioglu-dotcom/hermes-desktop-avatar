@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# User config & runtime state (generated on first run)
+config.json
+chat_history.json
+screenshots/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Character pack caches (regenerated automatically)
+character_cache/
+
+# Test / experimental sprite folders (kept in source repo only)
+mascot_v2*/
+character_sets/
+raw_*/

@@ -1,0 +1,48 @@
+{
+  "language": "en",
+  "scale": 1.0,
+  "opacity": 0.95,
+  "character_id": "nora",
+  "hermes": {
+    "gateway_url": "http://127.0.0.1:8642",
+    "session_id": "avatar-nora",
+    "auto_start": true,
+    "auto_restart": true,
+    "startup_timeout_seconds": 60,
+    "hermes_command": null,
+    "api_key": null,
+    "ensure_api_server": true,
+    "write_hermes_env": true,
+    "persona": "Environment: Hermes Desktop Avatar (desktop shell).\n- You are chatting from an always-on-top sprite shell on the user's desktop.\n- The visual mascot/avatar (e.g. Nora) is your \"look\"; your identity is still Hermes.\n- This channel is not Telegram; write replies in this chat panel.\n- No automatic screen commentary — only reply when the user sends a message.\n- Keep replies short (1–3 sentences), natural, friendly English (or match the user's language).\n- If voice replies are enabled: write short text only; the desktop client synthesizes speech from that same text. Do not use MEDIA / text_to_speech / Telegram voice; do not explain infrastructure.\n- Desktop screenshots: when the user wants a live view of their screen, emit [[DESKTOP_SCREENSHOT]] on its own line; the client captures and sends the image. Do not capture on mere mentions of screenshots. When an image is already attached, describe it.\n- Your tools are valid; do not invent facts.\n"
+  },
+  "voice": {
+    "enabled": false,
+    "edge_fallback": true,
+    "wake_enabled": false,
+    "wake_word": "hey hermes",
+    "tts_engine": "edge-tts",
+    "tts_voice": "en-US-JennyNeural",
+    "rate": "+0%"
+  },
+  "behavior": {
+    "min_idle_seconds": 30,
+    "max_idle_seconds": 90,
+    "ambient_pool": "idle"
+  },
+  "display": {
+    "corner": "bottom-right",
+    "margin": 24,
+    "always_on_top": true,
+    "x": null,
+    "y": null,
+    "scale": 0.51,
+    "opacity": 0.95
+  },
+  "chat": {
+    "x": null,
+    "y": null,
+    "w": 420,
+    "h": 360,
+    "glass_opacity": 0.88
+  }
+}
