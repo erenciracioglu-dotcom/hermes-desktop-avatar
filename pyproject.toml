@@ -3,6 +3,8 @@ name = "hermes-desktop-avatar"
 version = "0.1.0"
 description = "Always-on-top desktop avatar UI shell for a local Hermes Agent gateway"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
   "PySide6>=6.6.0,<6.9",

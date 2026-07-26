@@ -1,6 +1,18 @@
 # Hermes Desktop Avatar
 
-PySide6 desktop avatar — a UI shell (skin) for a local **Hermes Agent** gateway.
+> **Personal desktop UI shell for a local Hermes Agent.**
+>
+> **Status: early alpha — works on my machine.**
+> This is a single-user desktop client I built for my own setup. It is
+> functional but the developer is one person, the test matrix is one Windows
+> 11 Pro machine, and a motivated stranger has a realistic chance of running
+> it but should expect to read the source. Issues / PRs welcome, but treat
+> the documentation as a starting point, not a guarantee.
+
+A small always-on-top sprite on the desktop. Double-click or right-click →
+chat panel → Hermes answers through its local gateway. There is no automatic
+screen-commentary loop and no built-in LLM provider stack — the avatar
+only talks when you poke it.
 
 ## Demo
 
@@ -8,14 +20,122 @@ PySide6 desktop avatar — a UI shell (skin) for a local **Hermes Agent** gatewa
 
 > Click the preview above to open / download the 56-second intro clip
 > ([`assets/media/Nora_Intro_Short.mp4`](assets/media/Nora_Intro_Short.mp4),
-> 8.4 MB, 1920×1080 H.264).
+> 1920×1080 H.264, ~16 MB).
 
-## What this is
+## Assumptions
 
-A small always-on-top sprite on the desktop. Double-click or right-click → chat.
-Type a message; Hermes answers through its gateway. There is no automatic
-screen-commentary loop and no built-in LLM provider stack — the avatar only
-talks when the user pokes it.
+This project assumes *all* of the following on the host that runs it. If any
+of these are not true, the avatar will fail to start (gracefully, with logs)
+and the failure mode is documented under each bullet:
+
+| Assumption | Why | What happens otherwise |
+|-----------|-----|------------------------|
+| **Windows 11 Pro** (10 OK with caveats) | PySide6 + Qt for the overlay; GDI + Windows-specific paths | macOS / Linux: not supported, will not start |
+| **Python ≥ 3.11** in a venv | Used for the avatar itself, not the gateway | `ModuleNotFoundError` at startup; `pyproject.toml` declares `requires-python = ">=3.11"` |
+| **Hermes Agent ≥ current**, installed and runnable as `hermes` on `PATH` (or pointed at via `HERMES_CLI`) | The avatar talks to the gateway CLI / API server | `Gateway not reachable` if the gateway is missing; UI surfaces diagnostic logs |
+| **Hermes API server enabled** (`API_SERVER_ENABLED=true`, `API_SERVER_KEY` ≥ 16 chars) | OpenAI-compatible HTTP endpoint on loopback `:8642` is what the avatar consumes | Avatar auto-writes these keys into `HERMES_HOME/.env` on first launch — see [Gateway lifecycle](#gateway-lifecycle-loopback-only) |
+| **Loopback gateway only** (`127.0.0.1`, `localhost`, `::1`) | The avatar manages the gateway lifecycle itself | Remote gateway URLs are *not* touched (the avatar cannot start/restart them) |
+| **A character pack is available** | The avatar ships only `nora.hchar` | Custom packs go in `%APPDATA%/hermes-desktop-avatar/characters/` |
+
+If any of these are not satisfied, see [Setup agent — per-user configuration](#setup-agent--per-user-configuration)
+for a checklist a setup agent can run on a fresh machine.
+
+## Getting started (Windows)
+
+A motivated stranger can get this running in roughly five steps. If you
+already have Hermes Agent working for Telegram, you can skip to step 3.
+
+### 1. Install Hermes Agent
+
+Follow the official Hermes Agent docs (https://hermes-agent.nousresearch.com/docs).
+Confirm `hermes` is on `PATH`:
+
+```bat
+where hermes
+hermes --version
+```
+
+You should see an executable path and a version string. If `hermes` is not
+on `PATH`, set `HERMES_CLI=C:\path\to\hermes.cmd` for the avatar (or drop a
+shortcut into a folder already on `PATH`).
+
+### 2. Start the Hermes API server once
+
+The avatar expects an OpenAI-compatible HTTP endpoint on `127.0.0.1:8642`.
+Hermes refuses to bind this port without an API key, so the first time
+you run the gateway, you must provide one. Either:
+
+```bat
+set API_SERVER_ENABLED=true
+set API_SERVER_KEY=<your-own-16-or-more-char-string>
+hermes gateway
+```
+
+…or let the avatar do this for you on first launch. If you have
+`Hugging Face` / `MiniMax` / `xAI` / `OpenAI` / `Edge` keys configured
+already in your `HERMES_HOME/config.yaml`, Hermes routes them through
+this same gateway.
+
+### 3. Clone this repo and create a venv
+
+```bat
+git clone https://github.com/erenciracioglu-dotcom/hermes-desktop-avatar.git
+cd hermes-desktop-avatar
+
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+The requirements are listed in both `requirements.txt` and `pyproject.toml`.
+The minimum set is `PySide6`, `requests`, `opencv-python`, `numpy`,
+`edge-tts`, `Pillow`. They will install on any Windows 11 Pro / Python 3.11
+combination that the author has tested.
+
+### 4. Run the avatar
+
+```bat
+run.bat
+```
+
+(`run.bat` is just `set PYTHONPATH=src` + `.venv\Scripts\python.exe -m
+avatar`, with a helpful error if `.venv` is missing.)
+
+On first launch the avatar will:
+
+1. Discover your Hermes CLI (via `HERMES_CLI` / `hermes` on `PATH` /
+   `HERMES_HOME`).
+2. `GET http://127.0.0.1:8642/health` — if unhealthy and the URL is
+   loopback, bring the gateway up itself.
+3. Write `API_SERVER_*` keys into your `HERMES_HOME/.env` (inside a clearly
+   marked block; never touches unrelated env vars).
+4. Copy `assets/characters/nora.hchar` into the user-level cache
+   (`%APPDATA%/hermes-desktop-avatar/character_cache/nora_v1.0.0/`).
+5. Drop a transparent sprite on the corner of your desktop.
+
+Settings live in `%APPDATA%\hermes-desktop-avatar\config.json` after first
+launch; defaults are in `config.default.json` (commit-safe, documented
+below).
+
+### 5. Sanity checks
+
+- Double-click the sprite (or right-click → **Show chat**) — the chat
+  panel opens, focus hits the input. Type "hello" and hit Enter. Hermes
+  should reply in 1–3 sentences.
+- Tray icon shows the avatar's state (idle / thinking / talking).
+- `%APPDATA%\hermes-desktop-avatar\avatar.log` is the place to look when
+  something does not work.
+
+If it does not work: see [Troubleshooting](#troubleshooting) below.
+
+## Troubleshooting
+
+| Symptom | Likely fix |
+|---------|-----------|
+| `ModuleNotFoundError: No module named 'PySide6'` | Activate the venv: `.venv\Scripts\activate.bat`, then `pip install -r requirements.txt` |
+| `Gateway not reachable` and tray shows a red badge | Run `hermes gateway` once manually; if it dies immediately, see `HERMES_HOME\logs\` — Hermes is more verbose than the avatar's log |
+| Sprite shows but chat panel never appears | Right-click the sprite → **Show chat**; on first run it can be hidden behind other windows |
+| Avatar writes duplicate `API_SERVER_*` lines to `.env` | This is a bug — file an issue with `HERMES_HOME/.env` content. The avatar is supposed to strip its own block before re-writing. |
+| 401 Unauthorized from gateway | The avatar's bearer key in `config.json` no longer matches `API_SERVER_KEY` in `HERMES_HOME/.env`. Restart the avatar (it picks up the new key on launch) or hand-edit either to match. |
 
 ## Architecture
 
