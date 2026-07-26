@@ -2,6 +2,14 @@
 
 PySide6 desktop avatar — a UI shell (skin) for a local **Hermes Agent** gateway.
 
+## Demo
+
+[![Nora intro — click to play](https://github.com/erenciracioglu-dotcom/hermes-desktop-avatar/raw/main/assets/media/Nora_Intro_Short.mp4)](https://github.com/erenciracioglu-dotcom/hermes-desktop-avatar/raw/main/assets/media/Nora_Intro_Short.mp4)
+
+> Click the preview above to open / download the 56-second intro clip
+> ([`assets/media/Nora_Intro_Short.mp4`](assets/media/Nora_Intro_Short.mp4),
+> 8.4 MB, 1920×1080 H.264).
+
 ## What this is
 
 A small always-on-top sprite on the desktop. Double-click or right-click → chat.
