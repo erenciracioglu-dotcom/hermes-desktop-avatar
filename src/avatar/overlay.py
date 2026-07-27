@@ -271,13 +271,19 @@ class OverlayWindow(QWidget):
 
         idle_val = loaded.pop("idle", None)
         if isinstance(idle_val, list):
-            for i, seq in enumerate(idle_val):
-                if isinstance(seq, _LazySpriteSequence):
-                    key = f"idle_{i}_{seq._path.stem}"
-                    self._ambient_pool[key] = seq
-                elif isinstance(seq, list) and seq:
-                    key = f"idle_{i}"
-                    self._ambient_pool[key] = seq
+            if idle_val and isinstance(idle_val[0], QPixmap):
+                # A plain list of QPixmaps is one animation sequence, not a
+                # list of clip variants. This is the generated-placeholder
+                # shape used when a character pack has no usable clips.
+                self._ambient_pool["idle_0"] = idle_val
+            else:
+                for i, seq in enumerate(idle_val):
+                    if isinstance(seq, _LazySpriteSequence):
+                        key = f"idle_{i}_{seq._path.stem}"
+                        self._ambient_pool[key] = seq
+                    elif isinstance(seq, list) and seq:
+                        key = f"idle_{i}"
+                        self._ambient_pool[key] = seq
         elif isinstance(idle_val, _LazySpriteSequence):
             self._ambient_pool[f"idle_0_{idle_val._path.stem}"] = idle_val
         elif idle_val is not None:
@@ -312,6 +318,8 @@ class OverlayWindow(QWidget):
                 frames[state] = val
 
         frames.update(self._ambient_pool)
+        if self._ambient_pool:
+            frames["idle"] = next(iter(self._ambient_pool.values()))
         self._frames = frames
         self._ambient = list(self._ambient_pool.keys()) or ["idle"]
         logger.info(

@@ -4,10 +4,11 @@
 >
 > **Status: early alpha — works on my machine.**
 > This is a single-user desktop client I built for my own setup. It is
-> functional but the developer is one person, the test matrix is one Windows
-> 11 Pro machine, and a motivated stranger has a realistic chance of running
-> it but should expect to read the source. Issues / PRs welcome, but treat
-> the documentation as a starting point, not a guarantee.
+> functional but the developer is one person, and the test matrix is limited
+> to Windows 11 Pro and an Apple-silicon Mac source run. A motivated stranger
+> has a realistic chance of running it but should expect to read the source.
+> Issues / PRs welcome, but treat the documentation as a starting point, not
+> a guarantee.
 
 A small always-on-top sprite on the desktop. Double-click or right-click →
 chat panel → Hermes answers through its local gateway. There is no automatic
@@ -30,12 +31,12 @@ and the failure mode is documented under each bullet:
 
 | Assumption | Why | What happens otherwise |
 |-----------|-----|------------------------|
-| **Windows 11 Pro** (10 OK with caveats) | PySide6 + Qt for the overlay; GDI + Windows-specific paths | macOS / Linux: not supported, will not start |
+| **Windows 11 Pro** (10 OK with caveats) or **macOS** (experimental) | PySide6 + Qt provide the overlay and desktop capture | macOS is a source run, not a signed/notarized app; Linux is unverified |
 | **Python ≥ 3.11** in a venv | Used for the avatar itself, not the gateway | `ModuleNotFoundError` at startup; `pyproject.toml` declares `requires-python = ">=3.11"` |
 | **Hermes Agent ≥ current**, installed and runnable as `hermes` on `PATH` (or pointed at via `HERMES_CLI`) | The avatar talks to the gateway CLI / API server | `Gateway not reachable` if the gateway is missing; UI surfaces diagnostic logs |
 | **Hermes API server enabled** (`API_SERVER_ENABLED=true`, `API_SERVER_KEY` ≥ 16 chars) | OpenAI-compatible HTTP endpoint on loopback `:8642` is what the avatar consumes | Avatar auto-writes these keys into `HERMES_HOME/.env` on first launch — see [Gateway lifecycle](#gateway-lifecycle-loopback-only) |
 | **Loopback gateway only** (`127.0.0.1`, `localhost`, `::1`) | The avatar manages the gateway lifecycle itself | Remote gateway URLs are *not* touched (the avatar cannot start/restart them) |
-| **A character pack is available** | The avatar ships only `nora.hchar` | Custom packs go in `%APPDATA%/hermes-desktop-avatar/characters/` |
+| **A character pack is available** | The avatar ships only `nora.hchar` | Custom packs go in `%APPDATA%/hermes-desktop-avatar/characters/` (Windows) or `~/Library/Application Support/hermes-desktop-avatar/characters/` (macOS) |
 
 If any of these are not satisfied, see [Setup agent — per-user configuration](#setup-agent--per-user-configuration)
 for a checklist a setup agent can run on a fresh machine.
@@ -88,8 +89,8 @@ py -3.11 -m venv .venv
 
 The requirements are listed in both `requirements.txt` and `pyproject.toml`.
 The minimum set is `PySide6`, `requests`, `opencv-python`, `numpy`,
-`edge-tts`, `Pillow`. They will install on any Windows 11 Pro / Python 3.11
-combination that the author has tested.
+`edge-tts`, `Pillow`. Install them from `requirements.txt` so pip selects
+the platform-specific wheels for your Python version.
 
 ### 4. Run the avatar
 
@@ -108,8 +109,7 @@ On first launch the avatar will:
    loopback, bring the gateway up itself.
 3. Write `API_SERVER_*` keys into your `HERMES_HOME/.env` (inside a clearly
    marked block; never touches unrelated env vars).
-4. Copy `assets/characters/nora.hchar` into the user-level cache
-   (`%APPDATA%/hermes-desktop-avatar/character_cache/nora_v1.0.0/`).
+4. Copy `assets/characters/nora.hchar` into the platform user-level cache.
 5. Drop a transparent sprite on the corner of your desktop.
 
 Settings live in `%APPDATA%\hermes-desktop-avatar\config.json` after first
@@ -127,11 +127,42 @@ below).
 
 If it does not work: see [Troubleshooting](#troubleshooting) below.
 
+## Getting started (macOS, experimental)
+
+macOS currently runs from source; there is no signed or notarized `.app`
+bundle. Hermes Agent must already be installed, and `hermes --version` should
+work in Terminal.
+
+```sh
+git clone https://github.com/erenciracioglu-dotcom/hermes-desktop-avatar.git
+cd hermes-desktop-avatar
+
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+./run.command
+```
+
+`run.command` sets `PYTHONPATH=src` and starts the project venv. It can also be
+opened from Finder after the first Terminal run. If the local Hermes gateway
+is not configured yet, start it once with a key:
+
+```sh
+export API_SERVER_ENABLED=true
+export API_SERVER_KEY='your-own-16-or-more-char-string'
+hermes gateway
+```
+
+Settings and logs are stored in
+`~/Library/Application Support/hermes-desktop-avatar/`. Capturing the desktop
+requires Screen Recording permission for the terminal or Python process under
+**System Settings → Privacy & Security**; chat and the avatar overlay do not
+require that permission.
+
 ## Troubleshooting
 
 | Symptom | Likely fix |
 |---------|-----------|
-| `ModuleNotFoundError: No module named 'PySide6'` | Activate the venv: `.venv\Scripts\activate.bat`, then `pip install -r requirements.txt` |
+| `ModuleNotFoundError: No module named 'PySide6'` | Install into the project venv: `.venv\Scripts\python.exe -m pip install -r requirements.txt` (Windows) or `.venv/bin/python -m pip install -r requirements.txt` (macOS) |
 | `Gateway not reachable` and tray shows a red badge | Run `hermes gateway` once manually; if it dies immediately, see `HERMES_HOME\logs\` — Hermes is more verbose than the avatar's log |
 | Sprite shows but chat panel never appears | Right-click the sprite → **Show chat**; on first run it can be hidden behind other windows |
 | Avatar writes duplicate `API_SERVER_*` lines to `.env` | This is a bug — file an issue with `HERMES_HOME/.env` content. The avatar is supposed to strip its own block before re-writing. |
@@ -194,7 +225,9 @@ Hermes on the API channel may not have computer-use tools. The avatar exposes a
 4. **Manual:** chat **📷** attaches a desktop PNG without waiting for Ava.
 
 Mere chat about “screenshot files” does **not** auto-capture. Files go under
-`%APPDATA%/hermes-desktop-avatar/screenshots/`.
+the platform user-data directory: `%APPDATA%/hermes-desktop-avatar/screenshots/`
+on Windows or `~/Library/Application Support/hermes-desktop-avatar/screenshots/`
+on macOS.
 
 ## States
 
@@ -204,15 +237,16 @@ Mere chat about “screenshot files” does **not** auto-capture. Files go under
 
 ## Run
 
+Windows:
+
 ```bat
 run.bat
 ```
 
-or:
+macOS:
 
-```bat
-set PYTHONPATH=src
-.venv\Scripts\python.exe -m avatar
+```sh
+./run.command
 ```
 
 Requires the project venv (PySide6, requests) and Hermes Agent with the
@@ -221,7 +255,8 @@ Requires the project venv (PySide6, requests) and Hermes Agent with the
 ## Config
 
 - Defaults: `config.default.json` (repo root)  
-- User overrides: `%APPDATA%\hermes-desktop-avatar\config.json`  
+- User overrides: `%APPDATA%\hermes-desktop-avatar\config.json` (Windows) or
+  `~/Library/Application Support/hermes-desktop-avatar/config.json` (macOS)
 
 Important keys under `hermes`:
 
@@ -251,14 +286,14 @@ endpoints that differ per machine.
 
 | Item | Where it lives | What the agent should do |
 |------|----------------|--------------------------|
-| **Hermes Agent source** | `HERMES_HOME` (env) or `%LOCALAPPDATA%/hermes` | Discover the user's existing Hermes Agent checkout. Avatar reads voice tools (TTS) from there. Common layouts: `C:/hermes-agent`, `%LOCALAPPDATA%/hermes/hermes-agent`, `~/.hermes/...`. |
+| **Hermes Agent source** | `HERMES_HOME` (env), `%LOCALAPPDATA%/hermes` (Windows), or `~/.hermes` (macOS) | Discover the user's existing Hermes Agent checkout. Avatar reads voice tools (TTS) from there. Common layouts: `C:/hermes-agent`, `%LOCALAPPDATA%/hermes/hermes-agent`, `~/hermes-agent`, `~/.hermes/...`. |
 | **Hermes CLI** | `hermes.hermes_command` in config | Find the user's `hermes` binary. Order: `HERMES_CLI` env → `HERMES_COMMAND` → `HERMES_BIN` → `hermes` on `PATH` → `HERMES_HOME/hermes` or `HERMES_AGENT_DIR/hermes`. |
 | **Gateway URL** | `hermes.gateway_url` (default `http://127.0.0.1:8642`) | Point at the user's existing gateway. Only loopback (`127.0.0.1` / `localhost`) is auto-managed; remote URLs must already be healthy. |
 | **Gateway API key** | `hermes.api_key` | If Hermes is being managed locally and requires a key, set it once and let `write_hermes_env=true` persist it into the gateway's `.env`. Otherwise leave `null` if the gateway is open. |
 | **Gateway session id** | `hermes.session_id` | Distinct value per avatar deployment (default `avatar-nora`). Set this if the user already uses other Hermes sessions, to avoid conversation mixing. |
 | **Gateway persona** | `hermes.persona` | The user-editable system overlay the avatar sends each turn. Default is generic English; replace if the user has a different voice / tone requirement. |
 | **Voice / TTS** | `voice.*` keys + Hermes provider config | Avatar calls Hermes's `text_to_speech` tool in-process. The configured provider in the user's `HERMES_HOME/config.yaml` (xAI / MiniMax / Edge / etc.) decides the voice. `voice.edge_fallback` keeps things working if Hermes is offline. |
-| **Character pack location** | `assets/characters/` (bundled), `%APPDATA%/hermes-desktop-avatar/characters/` (user) | Place extra `.hchar` files or unpacked `<id>/character.json` here if the user has a pack to install. Default bundled character is `nora` (the only file shipped in this repo is `nora.hchar`; on first launch it is unpacked to `%APPDATA%/hermes-desktop-avatar/character_cache/nora_v1.0.0/`). |
+| **Character pack location** | `assets/characters/` (bundled), platform user-data `characters/` directory (user) | Place extra `.hchar` files or unpacked `<id>/character.json` here if the user has a pack to install. Default bundled character is `nora`; on first launch it is unpacked under `%APPDATA%/hermes-desktop-avatar/character_cache/` (Windows) or `~/Library/Application Support/hermes-desktop-avatar/character_cache/` (macOS). |
 | **Sprite assets** | `external_clip_roots` in `assets/characters/nora/character.json` | Only required if a sprite fails to load and you need to add an extra search root (e.g. a per-user sprite folder). The release manifest leaves this empty on purpose: the bundled `nora.hchar` is the only source. |
 
 A setup agent should:
@@ -361,10 +396,10 @@ Conflict handling rules (read these before changing default behaviour):
   `HERMES_HOME/.env`, so the next manual `hermes gateway` keeps the new
   key in sync.
 
-For setup agents: after the avatar's first successful `ensure_gateway()`,
-`%APPDATA%/hermes-desktop-avatar/config.json` contains the resolved
-`hermes.api_key` and `hermes.gateway_url`. Treat these as the source of
-truth going forward — env vars still override.
+For setup agents: after the avatar's first successful `ensure_gateway()`, the
+platform user-data `config.json` contains the resolved `hermes.api_key` and
+`hermes.gateway_url`. Treat these as the source of truth going forward — env
+vars still override.
 
 ### Context overlay
 
@@ -388,8 +423,9 @@ This avoids relying on the LLM to “remember” to generate audio every turn
 (which caused silent replies, stale `nora_voice.ogg`, and mismatched speech).
 
 Requires a local Hermes agent checkout with `tools/tts_tool.py` (e.g.
-`C:\hermes-agent` or `%LOCALAPPDATA%\hermes\hermes-agent`) and `HERMES_HOME`
-pointing at the config that already works for Telegram TTS. No Hermes source patch.
+`C:\hermes-agent`, `%LOCALAPPDATA%\hermes\hermes-agent`, or
+`~/hermes-agent`) and `HERMES_HOME` pointing at the config that already works
+for Telegram TTS. No Hermes source patch.
 
 ## Layout
 
@@ -424,7 +460,7 @@ Characters are data packs (not hard-coded). Currently only **Nora** ships.
 |------|----------|
 | Directory pack | `assets/characters/<id>/character.json` |
 | Portable pack | `assets/characters/<id>.hchar` (zip: manifest + `clips/*.webp`) |
-| User packs | `%APPDATA%/hermes-desktop-avatar/characters/` |
+| User packs | `%APPDATA%/hermes-desktop-avatar/characters/` (Windows) or `~/Library/Application Support/hermes-desktop-avatar/characters/` (macOS) |
 
 Full packaging guide: [`avatar_packing.md`](avatar_packing.md).
 
