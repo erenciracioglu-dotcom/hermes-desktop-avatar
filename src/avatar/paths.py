@@ -55,6 +55,8 @@ def default_config_path() -> Path:
 def user_config_dir() -> Path:
     if sys.platform == "win32":
         base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
     else:
         base = Path.home() / ".config"
     path = base / "hermes-desktop-avatar"
